@@ -601,6 +601,96 @@
     color: var(--gray);
   }
 
+  /* ── CUSTOM CURSOR ── */
+  * { cursor: none !important; }
+
+  #cursor {
+    position: fixed;
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--teal);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, border-color 0.2s, background 0.2s;
+    mix-blend-mode: difference;
+  }
+
+  #cursor.grow {
+    width: 56px;
+    height: 56px;
+    background: rgba(42,157,143,0.1);
+    border-color: rgba(42,157,143,0.8);
+  }
+
+  #cursor-dot {
+    position: fixed;
+    width: 5px;
+    height: 5px;
+    background: var(--teal);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 10000;
+    transform: translate(-50%, -50%);
+  }
+
+  /* ── PARTICLE TRAIL ── */
+  .particle {
+    position: fixed;
+    border-radius: 50%;
+    background: var(--teal);
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    animation: particleFade 0.8s ease forwards;
+    opacity: 0.6;
+  }
+
+  @keyframes particleFade {
+    0%   { opacity: 0.6; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(0); }
+  }
+
+  /* ── HERO SPOTLIGHT ── */
+  .hero {
+    --mx: 70%;
+    --my: 50%;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle 400px at var(--mx) var(--my), rgba(42,157,143,0.07), transparent 70%);
+    pointer-events: none;
+    transition: background 0.1s;
+  }
+
+  /* ── HERO ROLE CURSOR BLINK ── */
+  .hero-role::after {
+    content: '|';
+    color: var(--teal);
+    animation: blink 1s infinite;
+    margin-left: 2px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+
+  /* ── PROJECT CARD TILT ── */
+  .project-card {
+    transform-style: preserve-3d;
+    transition: transform 0.15s ease, border-color 0.3s, box-shadow 0.3s;
+    will-change: transform;
+  }
+
+  /* ── SKILL TAG STAGGER ── */
+  .skill-tag:nth-child(odd)  { animation-delay: 0.05s; }
+  .skill-tag:nth-child(even) { animation-delay: 0.1s; }
+
   /* ── SCROLL REVEAL ── */
   .reveal {
     opacity: 0;
@@ -625,6 +715,10 @@
 </style>
 </head>
 <body>
+
+<!-- CUSTOM CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-dot"></div>
 
 <!-- NAV -->
 <nav>
@@ -654,7 +748,7 @@
       infrastructure on AWS. Based in Punjab, India.
     </p>
     <div class="hero-actions">
-      <a href="Satakshi_Bhadwal_Resume.pdf" download class="btn-primary">
+      <a href="https://satakshi-bhadwal.github.io/Satakshi_Bhadwal_Resume.pdf" download class="btn-primary">
         ↓ Download Resume
       </a>
       <a href="#projects" class="btn-secondary">
@@ -832,7 +926,7 @@
       <a href="https://github.com/satakshi-bhadwal" target="_blank" class="contact-link">
         ↗ GitHub
       </a>
-      <a href="Satakshi_Bhadwal_Resume.pdf" download class="contact-link">
+      <a href="https://satakshi-bhadwal.github.io/Satakshi_Bhadwal_Resume.pdf" download class="contact-link">
         ↓ Resume PDF
       </a>
     </div>
@@ -846,7 +940,7 @@
 </footer>
 
 <script>
-  // Scroll reveal
+  // ── SCROLL REVEAL ──
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
@@ -857,6 +951,119 @@
     });
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
+
+  // ── CUSTOM CURSOR ──
+  const cursor     = document.getElementById('cursor');
+  const cursorDot  = document.getElementById('cursor-dot');
+  let mouseX = 0, mouseY = 0;
+  let cursorX = 0, cursorY = 0;
+
+  document.addEventListener('mousemove', e => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    cursorDot.style.left = mouseX + 'px';
+    cursorDot.style.top  = mouseY + 'px';
+    spawnParticle(mouseX, mouseY);
+  });
+
+  // Smooth cursor lag
+  function animateCursor() {
+    cursorX += (mouseX - cursorX) * 0.12;
+    cursorY += (mouseY - cursorY) * 0.12;
+    cursor.style.left = cursorX + 'px';
+    cursor.style.top  = cursorY + 'px';
+    requestAnimationFrame(animateCursor);
+  }
+  animateCursor();
+
+  // Cursor grow on hoverable elements
+  document.querySelectorAll('a, button, .skill-tag, .project-card, .btn-primary, .btn-secondary').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
+
+  // ── PARTICLE TRAIL ──
+  let lastParticle = 0;
+  function spawnParticle(x, y) {
+    const now = Date.now();
+    if (now - lastParticle < 30) return;
+    lastParticle = now;
+
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = x + 'px';
+    p.style.top  = y + 'px';
+    const size = Math.random() * 5 + 3;
+    p.style.width  = size + 'px';
+    p.style.height = size + 'px';
+    p.style.setProperty('--dx', (Math.random() - 0.5) * 60 + 'px');
+    p.style.setProperty('--dy', (Math.random() - 0.5) * 60 + 'px');
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 800);
+  }
+
+  // ── MAGNETIC BUTTONS ──
+  document.querySelectorAll('.btn-primary, .btn-secondary, .nav-cta').forEach(btn => {
+    btn.addEventListener('mousemove', e => {
+      const rect = btn.getBoundingClientRect();
+      const dx = e.clientX - (rect.left + rect.width / 2);
+      const dy = e.clientY - (rect.top  + rect.height / 2);
+      btn.style.transform = `translate(${dx * 0.25}px, ${dy * 0.25}px)`;
+    });
+    btn.addEventListener('mouseleave', () => {
+      btn.style.transform = '';
+    });
+  });
+
+  // ── TYPING ANIMATION for hero role ──
+  const roles = ['Backend Engineer', 'Node.js Developer', 'AI Integration Specialist', 'AWS Cloud Developer'];
+  let roleIdx = 0, charIdx = 0, deleting = false;
+  const roleEl = document.querySelector('.hero-role');
+
+  function typeRole() {
+    const current = roles[roleIdx];
+    if (!deleting) {
+      roleEl.textContent = current.slice(0, charIdx + 1);
+      charIdx++;
+      if (charIdx === current.length) {
+        deleting = true;
+        setTimeout(typeRole, 2000);
+        return;
+      }
+    } else {
+      roleEl.textContent = current.slice(0, charIdx - 1);
+      charIdx--;
+      if (charIdx === 0) {
+        deleting = false;
+        roleIdx = (roleIdx + 1) % roles.length;
+      }
+    }
+    setTimeout(typeRole, deleting ? 40 : 80);
+  }
+  setTimeout(typeRole, 1500);
+
+  // ── TILT on project cards ──
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      const x = (e.clientX - rect.left) / rect.width  - 0.5;
+      const y = (e.clientY - rect.top)  / rect.height - 0.5;
+      card.style.transform = `translateY(-4px) rotateX(${-y * 6}deg) rotateY(${x * 6}deg)`;
+    });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+    });
+  });
+
+  // ── GLOWING CURSOR SPOTLIGHT on hero ──
+  const hero = document.querySelector('.hero');
+  hero.addEventListener('mousemove', e => {
+    const rect = hero.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width)  * 100;
+    const y = ((e.clientY - rect.top)  / rect.height) * 100;
+    hero.style.setProperty('--mx', x + '%');
+    hero.style.setProperty('--my', y + '%');
+  });
 </script>
 
 </body>
